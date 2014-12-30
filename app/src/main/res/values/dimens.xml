@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <!-- The standard margin used on the top, left, and right sides of a card. -->
+    <dimen name="card_margin">40px</dimen>
+
+    <!-- The distance between the bottom of a card and the bottom of a tips-view, adjusted so
+         that the baseline of the text is 40px from the bottom of the card. -->
+    <dimen name="tip_margin_bottom">33px</dimen>
+
+    <!-- The amount of space between the game state circles and the timer display in the status
+         bar. -->
+    <dimen name="timer_margin_left">40px</dimen>
+
+    <!-- The amount of space between the icon and the phrase text on the result screen. -->
+    <dimen name="result_icon_margin_right">20px</dimen>
+
+    <!-- The recommended margin for the top, left, and right edges of a card. -->
+    <dimen name="glass_card_margin">40px</dimen>
+
+    <!-- The recommended margin between the bottom of the card and the footer. This is
+         an adjusted value so that the baseline of the text in the footer sits 40px
+         from the bottom of the card, matching the other margins. -->
+    <dimen name="glass_card_footer_margin">33px</dimen>
+
+    <!-- The recommended margin for the left column of the two-column card. -->
+    <dimen name="glass_card_two_column_margin">30px</dimen>
+
+    <!-- The maximum height of the body content inside a card. -->
+    <dimen name="glass_card_body_height">240px</dimen>
+
+    <!-- The width of the left column in the two-column layout. -->
+    <dimen name="glass_card_left_column_width">240px</dimen>
+
+</resources>
