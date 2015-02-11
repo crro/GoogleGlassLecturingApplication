@@ -25,6 +25,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import org.eclipse.jetty.client.HttpClient;
@@ -51,6 +52,9 @@ public class MainActivity extends Activity {
      * works properly.
      */
     private final Handler mHandler = new Handler();
+
+    private TextView _titleEditText;
+    private String _sessionCode;
 
     /** Listener that displays the options menu when the touchpad is tapped. */
     private final GestureDetector.BaseListener mBaseListener = new GestureDetector.BaseListener() {
@@ -86,6 +90,7 @@ public class MainActivity extends Activity {
         setGesturesEnabled(true);
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mGestureDetector = new GestureDetector(this).setBaseListener(mBaseListener);
+        _titleEditText = (TextView) findViewById(R.id.presentationName);
     }
 
     @Override
@@ -116,8 +121,26 @@ public class MainActivity extends Activity {
                     }
                 });
                 return true;
+            case R.id.connect_server:
+                new SendGetTaskConnect(this).execute();
+                //Need to get everything in and then display the code with the instructions.
+                return true;
             default:
                 return false;
+        }
+    }
+
+    /**
+     * This method sets the code on the screen for the user to display.
+     */
+    public void displayCode(String code) {
+        if (code != null) {
+            code = code.replaceAll("(\\r|\\n)", "");
+            _sessionCode = code;
+            _titleEditText.setText("Please enter th code: "+code+" in the Java App.\nThen select Start " +
+                    "Presentation from the options");
+        } else {
+            _titleEditText.setText("Oops, something went wrong please try again later");
         }
     }
 
@@ -144,9 +167,14 @@ public class MainActivity extends Activity {
      * Starts the PresentationModeActivity.
      */
     private void startPresentation() {
-        startActivity(new Intent(this, PresentationModeActivity.class));
+        Intent i = new Intent(this, PresentationModeActivity.class);
+        i.putExtra(GlassConstants.SESSION_CODE, _sessionCode);
+        startActivity(i);
     }
 
+    public void changePresentationText(String text) {
+        _titleEditText.setText(text);
+    }
 
 
 }

@@ -4,6 +4,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
+        android:id="@+id/connect_server"
+        android:icon="@drawable/ic_game_50"
+        android:title="@string/connect"
+        />
+    <item
         android:id="@+id/start_presentation"
         android:icon="@drawable/ic_game_50"
         android:title="@string/start_presentation"

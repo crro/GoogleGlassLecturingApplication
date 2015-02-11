@@ -6,6 +6,7 @@ import android.view.View;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.StringContentProvider;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
@@ -18,70 +19,74 @@ import java.util.concurrent.TimeoutException;
  * Created by David on 09/30/14.
  */
 public class SendPostTask extends AsyncTask<String, Integer, String> {
-    private PresentationModeActivity _presentation;
 
-    public SendPostTask(PresentationModeActivity presentation) {
+    private PresentationModeActivity _presentation;
+    private String _sessionCode;
+    private HttpClient _httpClient;
+
+    public SendPostTask(PresentationModeActivity presentation, String sessionCode, HttpClient hC) {
         _presentation = presentation;
+        _sessionCode = sessionCode;
+        _httpClient = hC;
     }
 
     @Override
     protected String doInBackground(String... params) {
         try {
-            HttpClient httpClient = new HttpClient();
-            httpClient.start();
             int status;
-            Request request = httpClient.POST("http://googleglassserver.herokuapp.com");
+            Request request = _httpClient.POST("http://1-dot-firm-aria-738.appspot.com/googleglassserver");
             String actionRequested = params[0];
-            ContentResponse response = request.param("Action", actionRequested).send();
+            ContentResponse content = request.param("ACTION", actionRequested).param("SESSION", _sessionCode).content(new StringContentProvider(actionRequested)).send();
             String responseTxt = "No Action";
 
             //Only in the case of the notes do we expect to do smth with the response
-            if (actionRequested.equals("Action Notes")) {
-                status = response.getStatus();
-                if (status != 200) {
-                    responseTxt = "Unable to fetch notes...";
-                } else {
-                    String text = response.getContentAsString();
-                    System.out.println(text);
-                    String[] wordChunk = text.split("\n");
-                    int len = wordChunk.length;
-                    int slideNum = -1;
-                    ArrayList<ArrayList<String>> notes = new ArrayList<ArrayList<String>>();
-                    ArrayList<String> slideNotes = new ArrayList<String>();
-                    String note = "";
-                    for (int i = 0; i < len; i++) {
-                        if (wordChunk[i].contains("PROCSLIDE")) {
-                            if (slideNum != -1) {
-                                if (!note.equals("")) {
-                                    slideNotes.add(note);
-                                }
-                                notes.add(slideNotes);
-                                slideNotes  = new ArrayList<String>();
-                            }
-                            slideNum++;
-                            note.concat(wordChunk[i].substring(10) + "\n");
-                        } else if (!wordChunk[i].equals("")) {
-                            note.concat(wordChunk[i]+"\n");
-                        } else {
-                            //It's "", so we add the entire note
-                            if (!note.equals("")) {
-                                slideNotes.add(note);
-                                note = "";
-                            }
-
-                        }
-                    }
-                    //We need to add the last slide
-                    if (!note.equals("")) {
-                        slideNotes.add(note);
-                    }
-                    notes.add(slideNotes);
-                    _presentation.setCurrentIndex(0);
-                    _presentation.setSlideIndex(0);
-                    responseTxt = notes.get(0).get(0);
-                    _presentation.setNotes(notes);
-                }
-            }
+            // This is now in SendGetTask I believe
+//            if (actionRequested.equals("Action Notes")) {
+//                status = response.getStatus();
+//                if (status != 200) {
+//                    responseTxt = "Unable to fetch notes...";
+//                } else {
+//                    String text = response.getContentAsString();
+//                    System.out.println(text);
+//                    String[] wordChunk = text.split("\n");
+//                    int len = wordChunk.length;
+//                    int slideNum = -1;
+//                    ArrayList<ArrayList<String>> notes = new ArrayList<ArrayList<String>>();
+//                    ArrayList<String> slideNotes = new ArrayList<String>();
+//                    String note = "";
+//                    for (int i = 0; i < len; i++) {
+//                        if (wordChunk[i].contains("PROCSLIDE")) {
+//                            if (slideNum != -1) {
+//                                if (!note.equals("")) {
+//                                    slideNotes.add(note);
+//                                }
+//                                notes.add(slideNotes);
+//                                slideNotes  = new ArrayList<String>();
+//                            }
+//                            slideNum++;
+//                            note.concat(wordChunk[i].substring(10) + "\n");
+//                        } else if (!wordChunk[i].equals("")) {
+//                            note.concat(wordChunk[i]+"\n");
+//                        } else {
+//                            //It's "", so we add the entire note
+//                            if (!note.equals("")) {
+//                                slideNotes.add(note);
+//                                note = "";
+//                            }
+//
+//                        }
+//                    }
+//                    //We need to add the last slide
+//                    if (!note.equals("")) {
+//                        slideNotes.add(note);
+//                    }
+//                    notes.add(slideNotes);
+//                    _presentation.setCurrentIndex(0);
+//                    _presentation.setSlideIndex(0);
+//                    responseTxt = notes.get(0).get(0);
+//                    _presentation.setNotes(notes);
+//                }
+//            }
             return responseTxt;
         } catch (InterruptedException e) {
             e.printStackTrace();

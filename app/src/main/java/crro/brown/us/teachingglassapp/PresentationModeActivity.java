@@ -34,6 +34,7 @@ import org.eclipse.jetty.client.api.Request;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -67,7 +68,7 @@ public class PresentationModeActivity extends Activity {
                             //Deal with the changes in current index
                             if (_currentIndex < 0) {
                                 //If we are out of bounds, we go to the previous slide
-                                new SendPostTask(PresentationModeActivity.this).execute("Action Previous");
+                                new SendPostTask(PresentationModeActivity.this, _sessionCode, _httpClient).execute("PREVIOUS");
                                 _slideIndex--;
                                 _currentIndex = 0;
                             }
@@ -75,13 +76,27 @@ public class PresentationModeActivity extends Activity {
                             String note = _notes.get(_slideIndex).get(_currentIndex);
                             if (note.charAt(0) == '<') {
                                 //Then we use the empty equation approach
-                                String equation = note;
-                                new SendPostTask(PresentationModeActivity.this).execute("GET IMAGE", equation.substring(2, equation.length() - 2));
+                                String equation = null;
+                                try {
+                                    equation = note.replaceAll("(\\r|\\n)", "");
+                                    equation = URLEncoder.encode(equation.substring(2, equation.length() - 2), "UTF-8");
+                                    new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+
                             } else if (note.contains("<<") && note.contains(">>")) {
                                 String[] notes = note.split("<<");
-                                new SendPostTask(PresentationModeActivity.this).execute("GET IMAGE", notes[1].substring(0, notes[1].length() - 2));
+                                try {
+                                    String equation = notes[1].replaceAll("(\\r|\\n)", "");
+                                    equation = URLEncoder.encode(equation.substring(0, equation.length() - 2), "UTF-8");
+                                    new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+
                             } else {
-                                //no equation
+                                //no equation - we dont do it until our regular thread does it for us.
                                 _notesTv.setVisibility(View.VISIBLE);
                                 _equationView.setVisibility((View.GONE));
                                 _notesTv.setText(note);
@@ -97,7 +112,7 @@ public class PresentationModeActivity extends Activity {
                             _currentIndex++;
                             if (_currentIndex == _notes.get(_slideIndex).size()) {
                                 //If we go out of bounds, we go to the next slide
-                                new SendPostTask(PresentationModeActivity.this).execute("Action Next");
+                                new SendPostTask(PresentationModeActivity.this, _sessionCode, _httpClient).execute("NEXT");
                                 _slideIndex++;
                                 _currentIndex = 0;
                             }
@@ -105,13 +120,27 @@ public class PresentationModeActivity extends Activity {
                             String note = _notes.get(_slideIndex).get(_currentIndex);
                             if (note.charAt(0) == '<') {
                                 //Then we use the empty equation approach
-                                String equation = note;
-                                new SendPostTask(PresentationModeActivity.this).execute("GET IMAGE", equation.substring(2, equation.length() - 2));
+                                String equation = null;
+                                try {
+                                    equation = note.replaceAll("(\\r|\\n)", "");
+                                    equation = URLEncoder.encode(equation.substring(2, equation.length() - 2), "UTF-8");
+                                    new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+
                             } else if (note.contains("<<") && note.contains(">>")) {
                                 String[] notes = note.split("<<");
-                                new SendPostTask(PresentationModeActivity.this).execute("GET IMAGE", notes[1].substring(0, notes[1].length() - 2));
+                                try {
+                                    String equation = notes[1].replaceAll("(\\r|\\n)", "");
+                                    equation = URLEncoder.encode(equation.substring(0, equation.length() - 2), "UTF-8");
+                                    new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                } catch (UnsupportedEncodingException e) {
+                                    e.printStackTrace();
+                                }
+
                             } else {
-                                //no equation
+                                //no equation -  we don't change it so that the automatic thread does it for us.
                                 _notesTv.setVisibility(View.VISIBLE);
                                 _equationView.setVisibility((View.GONE));
                                 _notesTv.setText(note);
@@ -146,6 +175,9 @@ public class PresentationModeActivity extends Activity {
 
     private TextView _notesTv;
 
+    //For http requests
+    private HttpClient _httpClient;
+
     private ArrayList<ArrayList<String>> _notes;
     //The slide index is used for the slides
     private int _slideIndex;
@@ -158,6 +190,7 @@ public class PresentationModeActivity extends Activity {
      * pass again until the animation has completed.
      */
     private boolean mGesturesEnabled;
+    private String _sessionCode;
 
     /**
      * This method does most of the initialization
@@ -175,6 +208,10 @@ public class PresentationModeActivity extends Activity {
         _lbm = LocalBroadcastManager.getInstance(this);
         //Keeping the screen on
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        
+        //Storing the session code
+        _sessionCode = getIntent().getStringExtra(GlassConstants.SESSION_CODE);
+        _httpClient = new HttpClient();
     }
 
     /**
@@ -183,17 +220,23 @@ public class PresentationModeActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
-        new SendPostTask(this).execute("Action Notes");
+        try {
+            _httpClient.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         IntentFilter filter = new IntentFilter(GlassConstants.UPDATE_FINISHED);
+
         _udpateIndex = new BroadcastReceiver() {
 
             public void onReceive(Context context, Intent intent) {
                 //Launch the next async task
-                new SendGetTask(PresentationModeActivity.this, _lbm).execute("INDEX");
+                new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("INDEX");
             }
 
         };
         _lbm.registerReceiver(_udpateIndex, filter);
+        new SendGetTask(this, _lbm, _sessionCode, _httpClient).execute("NOTES");
     }
 
     @Override
@@ -264,11 +307,11 @@ public class PresentationModeActivity extends Activity {
     }
 
     public void setSlideIndex(int index) {
-        _currentIndex = index;
+        _slideIndex = index;
     }
 
     public int getSlideIndex() {
-        return _currentIndex;
+        return _slideIndex;
     }
 
     public void setNoteTVText(String text) {

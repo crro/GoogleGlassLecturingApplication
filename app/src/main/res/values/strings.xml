@@ -17,5 +17,6 @@
     <!-- Menu item text to display the instructions. -->
     <string name="instructions">Instructions</string>
     <string name="title_activity_presentation_mode">Presentation Immersion</string>
+    <string name="connect">Connect To Server</string>
 
 </resources>
