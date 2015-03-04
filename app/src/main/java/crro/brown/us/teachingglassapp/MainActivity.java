@@ -137,7 +137,7 @@ public class MainActivity extends Activity {
         if (code != null) {
             code = code.replaceAll("(\\r|\\n)", "");
             _sessionCode = code;
-            _titleEditText.setText("Please enter th code: "+code+" in the Java App.\nThen select Start " +
+            _titleEditText.setText("Please enter the code: "+code+" in the Java App.\nThen select Start " +
                     "Presentation from the options");
         } else {
             _titleEditText.setText("Oops, something went wrong please try again later");

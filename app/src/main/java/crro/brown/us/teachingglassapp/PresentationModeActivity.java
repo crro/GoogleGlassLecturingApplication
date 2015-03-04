@@ -7,6 +7,7 @@ import com.google.android.glass.widget.CardScrollAdapter;
 import com.google.android.glass.widget.CardScrollView;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -27,6 +28,7 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
@@ -48,6 +50,10 @@ import java.util.concurrent.TimeoutException;
 public class PresentationModeActivity extends Activity {
     private InputStream _imageIS;
     private ImageView _equationView;
+
+
+
+    private ImageCache _equationCache;
     /** Listener for tap and swipe gestures during the presentation.
      * Tapping opens the menu
      * Swipping RIGHT or forward changes the note or the slide, depending on the current index
@@ -64,14 +70,17 @@ public class PresentationModeActivity extends Activity {
                             //We are at the very beginning so we do not do anything
                             return true;
                         } else {
-                            _currentIndex--;
                             //Deal with the changes in current index
-                            if (_currentIndex < 0) {
+                            if ((_currentIndex - 1)  < 0) {
                                 //If we are out of bounds, we go to the previous slide
-                                new SendPostTask(PresentationModeActivity.this, _sessionCode, _httpClient).execute("PREVIOUS");
-                                _slideIndex--;
-                                _currentIndex = 0;
+                                //We disable this for now
+                                mAudioManager.playSoundEffect(Sounds.DISALLOWED);
+                                //_slideIndex--;
+                                //new SendPostTask(PresentationModeActivity.this, _sessionCode, _httpClient).execute("INDEX", String.valueOf(_slideIndex));
+                                //_currentIndex = 0;
+                                return true;
                             }
+                            _currentIndex--;
                             //regardless, we need to update glass
                             String note = _notes.get(_slideIndex).get(_currentIndex);
                             if (note.charAt(0) == '<') {
@@ -80,7 +89,11 @@ public class PresentationModeActivity extends Activity {
                                 try {
                                     equation = note.replaceAll("(\\r|\\n)", "");
                                     equation = URLEncoder.encode(equation.substring(2, equation.length() - 2), "UTF-8");
-                                    new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                    //new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                    Bitmap imageB = _equationCache.get(equation);
+                                    _notesTv.setVisibility(View.GONE);
+                                    _equationView.setVisibility(View.VISIBLE);
+                                    _equationView.setImageBitmap(imageB);
                                 } catch (UnsupportedEncodingException e) {
                                     e.printStackTrace();
                                 }
@@ -90,7 +103,11 @@ public class PresentationModeActivity extends Activity {
                                 try {
                                     String equation = notes[1].replaceAll("(\\r|\\n)", "");
                                     equation = URLEncoder.encode(equation.substring(0, equation.length() - 2), "UTF-8");
-                                    new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                    //new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                    Bitmap imageB = _equationCache.get(equation);
+                                    _notesTv.setVisibility(View.GONE);
+                                    _equationView.setVisibility(View.VISIBLE);
+                                    _equationView.setImageBitmap(imageB);
                                 } catch (UnsupportedEncodingException e) {
                                     e.printStackTrace();
                                 }
@@ -109,13 +126,17 @@ public class PresentationModeActivity extends Activity {
                             //We are at the very end so we don't do anything
                             return true;
                         } else {
-                            _currentIndex++;
-                            if (_currentIndex == _notes.get(_slideIndex).size()) {
+
+                            if ((_currentIndex + 1) == _notes.get(_slideIndex).size()) {
                                 //If we go out of bounds, we go to the next slide
-                                new SendPostTask(PresentationModeActivity.this, _sessionCode, _httpClient).execute("NEXT");
-                                _slideIndex++;
-                                _currentIndex = 0;
+                                //We disable this for now
+                                mAudioManager.playSoundEffect(Sounds.DISALLOWED);
+                                //_slideIndex++;
+                                //new SendPostTask(PresentationModeActivity.this, _sessionCode, _httpClient).execute("INDEX", String.valueOf(_slideIndex));
+                                //_currentIndex = 0;
+                                return true;
                             }
+                            _currentIndex++;
                             //Anyhow, we update glass display.
                             String note = _notes.get(_slideIndex).get(_currentIndex);
                             if (note.charAt(0) == '<') {
@@ -124,7 +145,12 @@ public class PresentationModeActivity extends Activity {
                                 try {
                                     equation = note.replaceAll("(\\r|\\n)", "");
                                     equation = URLEncoder.encode(equation.substring(2, equation.length() - 2), "UTF-8");
-                                    new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                    //new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                    //We get the image and put it in.
+                                    Bitmap imageB = _equationCache.get(equation);
+                                    _notesTv.setVisibility(View.GONE);
+                                    _equationView.setVisibility(View.VISIBLE);
+                                    _equationView.setImageBitmap(imageB);
                                 } catch (UnsupportedEncodingException e) {
                                     e.printStackTrace();
                                 }
@@ -134,7 +160,12 @@ public class PresentationModeActivity extends Activity {
                                 try {
                                     String equation = notes[1].replaceAll("(\\r|\\n)", "");
                                     equation = URLEncoder.encode(equation.substring(0, equation.length() - 2), "UTF-8");
-                                    new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                    //new SendGetTask(PresentationModeActivity.this, _lbm, _sessionCode, _httpClient).execute("IMAGE", equation);
+                                    //We get the image and put it in.
+                                    Bitmap imageB = _equationCache.get(equation);
+                                    _notesTv.setVisibility(View.GONE);
+                                    _equationView.setVisibility(View.VISIBLE);
+                                    _equationView.setImageBitmap(imageB);
                                 } catch (UnsupportedEncodingException e) {
                                     e.printStackTrace();
                                 }
@@ -150,6 +181,9 @@ public class PresentationModeActivity extends Activity {
                     case TAP:
                         mAudioManager.playSoundEffect(Sounds.TAP);
                         openOptionsMenu();
+                        return true;
+                    case SWIPE_DOWN:
+                        Toast.makeText(PresentationModeActivity.this, "Tap For Options", Toast.LENGTH_LONG).show();
                         return true;
                     default:
                         return false;
@@ -212,6 +246,11 @@ public class PresentationModeActivity extends Activity {
         //Storing the session code
         _sessionCode = getIntent().getStringExtra(GlassConstants.SESSION_CODE);
         _httpClient = new HttpClient();
+
+        //Initialize the cache
+        int memClass = ( (ActivityManager)this.getSystemService(Context.ACTIVITY_SERVICE) ).getMemoryClass();
+        int cacheSize = 1024 * 1024 * memClass / 6;
+        _equationCache = new ImageCache(cacheSize);
     }
 
     /**
@@ -236,6 +275,7 @@ public class PresentationModeActivity extends Activity {
 
         };
         _lbm.registerReceiver(_udpateIndex, filter);
+        //This command takes the notes, process them, requests images and caches them.
         new SendGetTask(this, _lbm, _sessionCode, _httpClient).execute("NOTES");
     }
 
@@ -274,6 +314,8 @@ public class PresentationModeActivity extends Activity {
         // smoother transition between activities.
         switch (item.getItemId()) {
             case R.id.end_presentation:
+                //We clear the cache
+                _equationCache.evictAll();
                 this.finish();
                 return true;
             default:
@@ -336,6 +378,13 @@ public class PresentationModeActivity extends Activity {
 
     public void setEquationImage(Bitmap image) {
         _equationView.setImageBitmap(image);
+    }
+    public ImageCache getEquationCache() {
+        return _equationCache;
+    }
+
+    public void setEquationCache(ImageCache _equationCache) {
+        this._equationCache = _equationCache;
     }
 
 

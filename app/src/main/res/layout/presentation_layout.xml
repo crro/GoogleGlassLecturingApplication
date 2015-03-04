@@ -18,15 +18,15 @@
 
         <TextView
             android:id="@+id/notes_panel"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
             android:text="Fetching your notes..."
             android:textAppearance="?android:attr/textAppearanceLarge"/>
 
         <ImageView
             android:id="@+id/equations_viewer"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
             android:layout_weight="0.67"
             android:src="@drawable/ic_launcher"
             android:layout_alignParentTop="true"
